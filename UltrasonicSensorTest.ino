@@ -17,7 +17,7 @@ void setup() {
 
 void loop() {
   while(true) {
-    getDistance();
+    Serial.println(getDistance());
     delay(1000);
   }
 }
