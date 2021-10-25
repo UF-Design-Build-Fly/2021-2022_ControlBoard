@@ -3,13 +3,18 @@
    Created by Maalav Pandya on 10/10/2021
 */
 
+
+//Declaring pin numbers for sensor data lines
 int trigPin = 2;
 int echoPin = 3;
 
 void setup() {
+
+  //Declaring input and output modes
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
+  //Initializing Serial Monitor
   Serial.begin(9600);
   Serial.println("Program Running...\n");
 }
@@ -23,6 +28,7 @@ void loop() {
 }
 
 long getDistance() {
+  //Function to return distance read by ultrasonic sensor as a long data type
   long distance, duration;
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
