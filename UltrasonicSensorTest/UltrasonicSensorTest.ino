@@ -8,11 +8,14 @@
 int trigPin = 2;
 int echoPin = 3;
 
+int pwmPin = 5; //Temporary variable for PWM pin Proof-of-concept
+
 void setup() {
 
   //Declaring input and output modes
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+  pinMode(pwmPin, INPUT);
 
   //Initializing Serial Monitor
   Serial.begin(9600);
