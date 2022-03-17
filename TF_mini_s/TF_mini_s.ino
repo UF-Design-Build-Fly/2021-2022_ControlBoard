@@ -22,6 +22,18 @@
  */
 
 
+// Pseudocode needs to be editted, stopped mid way through
+ /* 1. wait for automated deployment to be enabled and triggered. Should be able to be disabled/overrided with user control.
+  * 2. when enabled and triggered, servo should start moving and we should start reading data packets from TF-mini-s.
+  * 3. vial package should be detected when in FOV and detected when leaving FOV. Once crate has left FOV, stop servo from spinning.
+  * 4. After automated deployment has been completed, go back to reading command signal to see if automated deployment system is enabled and/or triggered.
+  * 5. enable interrupts for some pre-determined amount of time to see if command signal frame lines up with when the data frame 
+  * 5. If PWM signal goes from low to high within the time interrupts are enabled then time how long signal is high for.
+  * 6. Otherwise disable interrupts after the alotted time and wait for data frame from 
+  */
+ 
+
+
 #include<Servo.h>
 
 const uint8_t L = 10;     //Number of samples in array
@@ -33,7 +45,13 @@ const byte HEADER = 0x59; //frame header of data package
 double dx = 0;
 uint8_t arrayPosition = 0; // position within dist array
 
-bool objectInView, runServo = false;
+bool objectInView, runServo = false; //Status flags used in code
+
+//For interrupts
+bool interruptsEnabled = false;
+volatile bool ISRflag = false; // flag to be enabled/disabled within ISR
+long interruptsEnabledStopTime = 0;
+const uint16_t interruptsEnabledDuration = 5000; // Enabled for 5000us = 5ms
 
 Servo myServo;
 
@@ -48,7 +66,7 @@ bool newData = 0; // flag is set when a set of 10 pieces of data are available t
 #define commandPin 1 // pin PWM signal to control when the automated deployment sequence begins.
 #define servoPin 2 // pin used to send control signal to (will need to implement a select line pin to control which source is driving the signal for the servo, user or microcontroller)
 
-uint16_t commandSignal = 0;
+long commandSignal = 0;
 
 /* TESTING NOTES
  * 
@@ -76,36 +94,94 @@ void loop() {
 
     Serial1.begin(115200); // initialize UART
     runServo = true; // command signal sets deployment flag (starts sequence)
+    delay(1000); //delay for 1 seconds to make sure 
     myServo.writeMicroseconds(1000); // set continuous servo to rotate    
   
     while(runServo == true) {
-      get_data();
-
-      // Super basic peak detection
-
-      // NOTE: may also want to incorparate something that checks to see if distance is zero (something is in front of device already)
-      // Need to add override to stop deployment sequence, however, this is proving difficult due to the fact we are constantly reading UART data for TF-mini-s during the
-      // deployment sequence. Since TF-mini-s is constantly spitting out data at 100Hz, our data frame will be constantly out of sink if we are constantly checking some
-      // PWM signal using the pulseIn() function. Will probably need to end up periodically checking the command channel on the receiver
       
-      if (dx >= 3 and objectInView == true) { //dx>=3 refers to the minimum peak level in order to trigger this event
-        SerialUSB.print(" Object has moved out of FOV\t");
-        objectInView = false;
-        SerialUSB.print("objectInView = ");
-        SerialUSB.print(objectInView);
-        
-        runServo = false; // flag set to stop running servo/deployment
-        myServo.writeMicroseconds(1500);
-        Serial1.end(); // disable serial port
-        
+      get_data();
+      object_detection();
+      enableInterrupts();
+
+      while(micros() < interruptsEnabledStopTime) {
+        if (ISRflag) { //if transition fromm low to high is detected
+          ISRflag = false; //reset ISR flag
+          commandSignal = micros(); // log start time
+          while(digitalRead(commandPin) == HIGH); //wait for signal to go low
+          commandSignal = micros() - commandSignal; //find duration signal was high
+
+          if (commandSignal >= 1500) {
+            SerialUSB.println("USER INTERRUPTED/STOPPED DEPLOYMENT SEQUENCE");
+
+            //stop servo
+            myServo.writeMicroseconds(1500);
+            Serial1.end(); // disable serial port
+
+            //reset flags
+            runServo = false; // flag set to stop running servo/deployment
+            objectInView = false; //may not necessarily be true, just reset assuming no crate has passed in front. Also remember later this program will account for a system enable and a system start using a trigger switch.
+          
+            delay(1000);
+          }
+          else { // print command signal otherwise
+            SerialUSB.print("commandSignal = ");
+            SerialUSB.println(commandSignal);
+          }
+        }
+        else {
+          SerialUSB.println("waiting for signal");
+        }
       }
-      else if (dx <= -3 and objectInView == false) { //dx>=-3 refers to the minimum peak level in order to trigger this event
-        SerialUSB.print(" Object has moved into of FOV\t");
-        objectInView = true;
-        SerialUSB.print("objectInView = ");
-        SerialUSB.print(objectInView);
-      }
+
+      //disable interrupts
+      detachInterrupt(digitalPinToInterrupt(commandPin));
+      interruptsEnabled = false;
+      
     }
+  }
+}
+
+/*****************************************************************
+ * 
+ *                  FUNCTIONS AND ISRs
+ * 
+ *****************************************************************/
+
+void ISR() {
+  ISRflag = true;
+}
+
+void enableInterrupts () {
+  //After data frame, enable interrupts
+  attachInterrupt(digitalPinToInterrupt(commandPin), ISR, RISING);
+  interruptsEnabled = true;
+  interruptsEnabledStopTime = micros() + interruptsEnabledDuration;
+}
+
+void object_detection() {
+  // Super basic peak detection
+  
+  // NOTE: may also want to incorparate something that checks to see if distance is zero (something is in front of device already)
+  // Need to add override to stop deployment sequence, however, this is proving difficult due to the fact we are constantly reading UART data for TF-mini-s during the
+  // deployment sequence. Since TF-mini-s is constantly spitting out data at 100Hz, our data frame will be constantly out of sink if we are constantly checking some
+  // PWM signal using the pulseIn() function. Will probably need to end up periodically checking the command channel on the receiver
+      
+  if (dx >= 3 and objectInView == true) { //dx>=3 refers to the minimum peak level in order to trigger this event
+    SerialUSB.print(" Object has moved out of FOV\t");
+    objectInView = false;
+    SerialUSB.print("objectInView = ");
+    SerialUSB.print(objectInView);
+  
+    runServo = false; // flag set to stop running servo/deployment
+    myServo.writeMicroseconds(1500);
+    Serial1.end(); // disable serial port
+  
+  }
+  else if (dx <= -3 and objectInView == false) { //dx>=-3 refers to the minimum peak level in order to trigger this event
+    SerialUSB.print(" Object has moved into of FOV\t");
+    objectInView = true;
+    SerialUSB.print("objectInView = ");
+    SerialUSB.print(objectInView);
   }
 }
 
@@ -212,9 +288,8 @@ void get_data() {
     if (arrayPosition == L) { // if the end of the array has been reached, set arrayPosition back to zero and use data to calculate new value
       arrayPosition = 0;
       newData = true;
-    }
+    }  
 }
-
 
 /*********************************************************
  * 
