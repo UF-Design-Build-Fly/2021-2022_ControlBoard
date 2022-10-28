@@ -1,0 +1,12 @@
+Change Physical Footprint: Designator=C1 Old Footprint=CAPC0603 New Footprint=CAPC0603
+Change Physical Footprint: Designator=J1 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J2 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J3 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J4 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J5 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J6 Old Footprint=1x3 2.54MM New Footprint=1x3 2.54MM
+Change Physical Footprint: Designator=J7 Old Footprint=1x4 2.54mm New Footprint=1x4 2.54mm
+Change Physical Footprint: Designator=U1 Old Footprint=MOUDLE14P-2-54-21X17-8MM New Footprint=MOUDLE14P-2-54-21X17-8MM
+Change Physical Footprint: Designator=U2 Old Footprint=CONV_TSR1-2450 New Footprint=CONV_TSR1-2450
+Change Physical Footprint: Designator=U3 Old Footprint=SOT23-6 New Footprint=SOT23-6
+Change Physical Footprint: Designator=U4 Old Footprint=TF-mini-s New Footprint=TF-mini-s

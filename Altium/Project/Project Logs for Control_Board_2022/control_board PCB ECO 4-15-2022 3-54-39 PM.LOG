@@ -1,0 +1,8 @@
+Change Component Designator: OldDesignator=BATT NewDesignator=J6
+Change Component Designator: OldDesignator=D NewDesignator=J4
+Change Component Designator: OldDesignator=E NewDesignator=J1
+Change Component Designator: OldDesignator=M NewDesignator=J3
+Change Component Designator: OldDesignator=S NewDesignator=J5
+Change Component Designator: OldDesignator=T NewDesignator=J2
+Added Member To Class: ClassName=control_board Member=Component J6 3x1 conn
+Added Member To Class: ClassName=control_board Member=Component U1 MOUDLE-SEEEDUINO-XIAO

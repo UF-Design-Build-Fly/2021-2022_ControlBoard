@@ -1,0 +1,6 @@
+Removed Pin From Net: NetName=TRIG Pin=U1-2
+Removed Pin From Net: NetName=DOOR Pin=U1-3
+Removed Pin From Net: NetName=STOPPER Pin=U1-4
+Added Pin To Net: NetName=DOOR Pin=U1-2
+Added Pin To Net: NetName=STOPPER Pin=U1-3
+Added Pin To Net: NetName=TRIG Pin=U1-4
